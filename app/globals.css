@@ -2,6 +2,7 @@
   --background: #fff8eb;
   --foreground: #241c18;
   --accent: #f06449;
+  --accent-foreground: #762f24;
   --highlight: #f4bd50;
 }
 
@@ -39,7 +40,7 @@ main {
 
 .eyebrow {
   margin: 0 0 1rem;
-  color: var(--accent);
+  color: var(--accent-foreground);
   font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 0.16em;
