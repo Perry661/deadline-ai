@@ -22,10 +22,10 @@ const planDaySchema = z.object({
 
 export const generatedPlanSchema = z.object({
   title: z.string().trim().min(1).max(120),
-  summary: z.string().min(1).max(600),
+  summary: z.string().trim().min(1).max(600),
   feasibility: z.enum(["on_track", "at_risk", "unrealistic"]),
-  riskExplanation: z.string().min(1).max(600),
-  scopeRecommendation: z.string().min(1).max(600),
+  riskExplanation: z.string().trim().min(1).max(600),
+  scopeRecommendation: z.string().trim().min(1).max(600),
   totalEstimatedMinutes: z.number().int().positive(),
   days: z.array(planDaySchema).min(1),
 });

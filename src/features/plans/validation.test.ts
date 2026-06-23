@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   generatedPlanSchema,
   planRequestSchema,
+  type GeneratedPlan,
 } from "./schema";
 import { validatePlanAgainstRequest } from "./validation";
 
@@ -14,7 +15,7 @@ const request = {
   timeZone: "America/Los_Angeles",
 };
 
-const validPlan = {
+const validPlan: GeneratedPlan = {
   title: "Ship the MVP",
   summary: "Implement and verify the core planning workflow.",
   feasibility: "on_track",
@@ -38,7 +39,7 @@ const validPlan = {
       steps: [{ title: "Run quality checks", estimatedMinutes: 60 }],
     },
   ],
-} as const;
+};
 
 describe("validatePlanAgainstRequest", () => {
   it("returns a valid parsed plan", () => {
@@ -126,4 +127,13 @@ describe("validatePlanAgainstRequest", () => {
   ])("rejects %s at the schema boundary", (_label, input) => {
     expect(() => generatedPlanSchema.parse(input)).toThrow();
   });
+
+  it.each(["summary", "riskExplanation", "scopeRecommendation"] as const)(
+    "rejects a whitespace-only %s",
+    (field) => {
+      expect(() =>
+        generatedPlanSchema.parse({ ...validPlan, [field]: "   " }),
+      ).toThrow();
+    },
+  );
 });
