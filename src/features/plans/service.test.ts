@@ -84,6 +84,18 @@ describe("generatePlan", () => {
     });
   });
 
+  it("validates raw requests before requesting a completion", async () => {
+    const complete = vi.fn<CompletionFn>();
+
+    await expect(
+      generatePlan({}, { apiKey: "test-api-key", complete }),
+    ).rejects.toMatchObject({
+      name: "ZodError",
+    });
+
+    expect(complete).not.toHaveBeenCalled();
+  });
+
   it("rethrows existing plan errors without changing their safe details", async () => {
     const expectedError = new PlanError(
       "UPSTREAM_ERROR",
@@ -95,5 +107,19 @@ describe("generatePlan", () => {
     await expect(
       generatePlan(validRequest, { apiKey: "test-api-key", complete }),
     ).rejects.toBe(expectedError);
+  });
+
+  it("maps unexpected completion failures to an upstream error", async () => {
+    const complete = vi
+      .fn<CompletionFn>()
+      .mockRejectedValue(new Error("secret provider token: sk-test"));
+
+    await expect(
+      generatePlan(validRequest, { apiKey: "test-api-key", complete }),
+    ).rejects.toMatchObject({
+      code: "UPSTREAM_ERROR",
+      message: "Unable to generate a plan.",
+      status: 502,
+    });
   });
 });

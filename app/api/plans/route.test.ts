@@ -124,4 +124,18 @@ describe("POST /api/plans", () => {
     });
     expect(response.status).toBe(502);
   });
+
+  it("returns a generic upstream error without leaking unexpected error messages", async () => {
+    mockedGeneratePlan.mockRejectedValue(
+      new Error("secret provider token: sk-test"),
+    );
+
+    const response = await POST(postRequest(validRequest));
+
+    await expect(response.json()).resolves.toEqual({
+      code: "UPSTREAM_ERROR",
+      message: "Unable to generate a plan.",
+    });
+    expect(response.status).toBe(502);
+  });
 });

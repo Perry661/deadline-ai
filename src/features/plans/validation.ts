@@ -4,6 +4,14 @@ import {
   type PlanRequest,
 } from "./schema";
 
+export class GeneratedPlanValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GeneratedPlanValidationError";
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
 export function validatePlanAgainstRequest(
   input: unknown,
   request: PlanRequest,
@@ -13,11 +21,15 @@ export function validatePlanAgainstRequest(
 
   for (const day of plan.days) {
     if (day.date > request.deadline) {
-      throw new Error("Plan contains a date after the deadline");
+      throw new GeneratedPlanValidationError(
+        "Plan contains a date after the deadline",
+      );
     }
 
     if (day.date < request.currentDate) {
-      throw new Error("Plan contains a date before the current date");
+      throw new GeneratedPlanValidationError(
+        "Plan contains a date before the current date",
+      );
     }
 
     const stepTotal = day.steps.reduce(
@@ -26,11 +38,15 @@ export function validatePlanAgainstRequest(
     );
 
     if (day.totalMinutes !== stepTotal) {
-      throw new Error("Daily total does not match step totals");
+      throw new GeneratedPlanValidationError(
+        "Daily total does not match step totals",
+      );
     }
 
     if (day.totalMinutes > dailyCapacity) {
-      throw new Error("Daily plan exceeds available capacity");
+      throw new GeneratedPlanValidationError(
+        "Daily plan exceeds available capacity",
+      );
     }
   }
 
@@ -40,7 +56,9 @@ export function validatePlanAgainstRequest(
   );
 
   if (plan.totalEstimatedMinutes !== planTotal) {
-    throw new Error("Plan total does not match step totals");
+    throw new GeneratedPlanValidationError(
+      "Plan total does not match step totals",
+    );
   }
 
   return plan;

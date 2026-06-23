@@ -6,7 +6,10 @@ import { PlanError } from "./errors";
 import { requestPlanCompletion } from "./openrouter";
 import { buildPlanningMessages } from "./prompt";
 import { planRequestSchema, type GeneratedPlan } from "./schema";
-import { validatePlanAgainstRequest } from "./validation";
+import {
+  GeneratedPlanValidationError,
+  validatePlanAgainstRequest,
+} from "./validation";
 
 export type CompletionFn = typeof requestPlanCompletion;
 
@@ -34,6 +37,7 @@ export type GeneratedPlanWithState = Omit<GeneratedPlan, "days"> & {
 
 const INVALID_MODEL_OUTPUT_MESSAGE =
   "The generated plan was invalid. Please try again.";
+const UPSTREAM_ERROR_MESSAGE = "Unable to generate a plan.";
 
 function invalidModelOutputError(): PlanError {
   return new PlanError(
@@ -41,6 +45,10 @@ function invalidModelOutputError(): PlanError {
     INVALID_MODEL_OUTPUT_MESSAGE,
     502,
   );
+}
+
+function upstreamError(): PlanError {
+  return new PlanError("UPSTREAM_ERROR", UPSTREAM_ERROR_MESSAGE, 502);
 }
 
 function isDomException(error: unknown): error is DOMException {
@@ -68,25 +76,36 @@ export async function generatePlan(
   const request = planRequestSchema.parse(rawRequest);
   const complete = options.complete ?? requestPlanCompletion;
 
+  let content: string;
+
   try {
-    const content = await complete({
+    content = await complete({
       apiKey: options.apiKey,
       messages: buildPlanningMessages(request),
       signal: options.signal,
     });
-    const parsed = JSON.parse(content) as unknown;
-    const plan = validatePlanAgainstRequest(parsed, request);
-
-    return addStepState(plan);
   } catch (error) {
     if (error instanceof PlanError || isDomException(error)) {
       throw error;
     }
 
-    if (error instanceof SyntaxError || error instanceof z.ZodError) {
+    throw upstreamError();
+  }
+
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    const plan = validatePlanAgainstRequest(parsed, request);
+
+    return addStepState(plan);
+  } catch (error) {
+    if (
+      error instanceof SyntaxError ||
+      error instanceof z.ZodError ||
+      error instanceof GeneratedPlanValidationError
+    ) {
       throw invalidModelOutputError();
     }
 
-    throw invalidModelOutputError();
+    throw error;
   }
 }
