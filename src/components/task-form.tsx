@@ -21,6 +21,8 @@ type PlanResponse = {
   message?: string;
 };
 
+const GENERIC_GENERATION_ERROR = "Unable to generate a plan.";
+
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -84,6 +86,14 @@ function isAbortError(error: unknown): boolean {
   );
 }
 
+async function parsePlanResponse(response: Response): Promise<PlanResponse> {
+  try {
+    return (await response.json()) as PlanResponse;
+  } catch {
+    return {};
+  }
+}
+
 export function TaskForm() {
   const router = useRouter();
   const { addTask } = useTasks();
@@ -126,6 +136,7 @@ export function TaskForm() {
     requestSequence.current = requestId;
     const controller = new AbortController();
 
+    activeRequest.current?.controller.abort();
     activeRequest.current = { id: requestId, controller };
     setStatus("generating");
 
@@ -143,10 +154,10 @@ export function TaskForm() {
         return;
       }
 
-      const result = (await response.json()) as PlanResponse;
+      const result = await parsePlanResponse(response);
 
       if (!response.ok || !result.plan) {
-        throw new Error(result.message || "Unable to generate a plan.");
+        throw new Error(result.message || GENERIC_GENERATION_ERROR);
       }
 
       if (!isActiveRequest(requestId)) {
@@ -171,7 +182,9 @@ export function TaskForm() {
       }
 
       setSubmitError(
-        error instanceof Error ? error.message : "Unable to generate a plan.",
+        error instanceof Error && error.message === GENERIC_GENERATION_ERROR
+          ? error.message
+          : GENERIC_GENERATION_ERROR,
       );
     }
   }
@@ -189,6 +202,7 @@ export function TaskForm() {
           Task description
         </label>
         <textarea
+          aria-invalid={errors.taskDescription ? "true" : undefined}
           aria-describedby={
             errors.taskDescription ? "task-description-error" : undefined
           }
@@ -214,6 +228,7 @@ export function TaskForm() {
             Deadline
           </label>
           <input
+            aria-invalid={errors.deadline ? "true" : undefined}
             aria-describedby={errors.deadline ? "deadline-error" : undefined}
             className="fieldControl"
             disabled={isGenerating}
@@ -235,6 +250,7 @@ export function TaskForm() {
             Hours per day
           </label>
           <input
+            aria-invalid={errors.hoursPerDay ? "true" : undefined}
             aria-describedby={
               errors.hoursPerDay ? "hours-per-day-error" : undefined
             }

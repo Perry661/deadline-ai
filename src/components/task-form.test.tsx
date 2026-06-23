@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -103,6 +104,10 @@ describe("TaskForm", () => {
     expect(
       screen.getByText("Describe what you need to finish."),
     ).toBeVisible();
+    expect(screen.getByLabelText(/task description/i)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
     expect(globalThis.fetch).not.toHaveBeenCalled();
 
     await user.type(
@@ -166,6 +171,94 @@ describe("TaskForm", () => {
     expect(
       screen.getByRole("button", { name: /generate plan/i }),
     ).toBeVisible();
+    await waitFor(() => {
+      expect(push).not.toHaveBeenCalled();
+    });
+    expect(localStorage.getItem("deadline-ai.tasks.v1")).toBeNull();
+  });
+
+  it("aborts an active request when a newer submit supersedes it", async () => {
+    const firstResponse = deferredResponse(generatedPlan("First Active Plan"));
+    const secondResponse = deferredResponse(generatedPlan("Second Active Plan"));
+    const capturedSignals: AbortSignal[] = [];
+
+    vi.mocked(fetch)
+      .mockImplementationOnce((_url, init) => {
+        if (init?.signal) {
+          capturedSignals.push(init.signal);
+        }
+
+        return firstResponse.promise;
+      })
+      .mockImplementationOnce((_url, init) => {
+        if (init?.signal) {
+          capturedSignals.push(init.signal);
+        }
+
+        return secondResponse.promise;
+      });
+
+    const { container } = render(<TaskForm />);
+    const form = container.querySelector("form");
+
+    if (!form) {
+      throw new Error("Expected TaskForm to render a form");
+    }
+
+    fireEvent.change(screen.getByLabelText(/task description/i), {
+      target: { value: "Active task" },
+    });
+    fireEvent.change(screen.getByLabelText(/deadline/i), {
+      target: { value: tomorrow },
+    });
+    fireEvent.change(screen.getByLabelText(/hours per day/i), {
+      target: { value: "2" },
+    });
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+
+    expect(capturedSignals[0]?.aborted).toBe(true);
+
+    secondResponse.resolve();
+
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/tasks\//));
+    });
+
+    firstResponse.resolve();
+
+    await waitFor(() => {
+      const storedTasks = JSON.parse(
+        localStorage.getItem("deadline-ai.tasks.v1") ?? "[]",
+      ) as Array<{ taskDescription: string; plan: { title: string } }>;
+
+      expect(storedTasks).toHaveLength(1);
+      expect(storedTasks[0]).toMatchObject({
+        taskDescription: "Active task",
+        plan: { title: "Second Active Plan" },
+      });
+    });
+    expect(push).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a safe error for malformed API responses", async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(fetch).mockResolvedValue(
+      new Response("not json", {
+        status: 502,
+        headers: { "Content-Type": "text/plain" },
+      }),
+    );
+
+    render(<TaskForm />);
+    await fillValidForm(user);
+    await user.click(screen.getByRole("button", { name: /generate plan/i }));
+
+    expect(
+      await screen.findByText("Unable to generate a plan."),
+    ).toBeVisible();
+    expect(screen.queryByText(/json/i)).not.toBeInTheDocument();
   });
 
   it("ignores a canceled request that resolves after a newer successful request", async () => {

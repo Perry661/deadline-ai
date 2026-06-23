@@ -324,6 +324,10 @@ h1 {
     box-shadow: var(--shadow-hard);
   }
 
+  .stopButton {
+    width: 2.75rem;
+  }
+
   .cardGrid,
   .splitGrid,
   .twoColumn,
