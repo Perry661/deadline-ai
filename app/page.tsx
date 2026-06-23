@@ -1,14 +1,28 @@
+"use client";
+
+import { Dashboard } from "../src/components/dashboard";
+import { useTasks } from "../src/features/tasks/use-tasks";
+
+function DashboardSkeleton() {
+  return (
+    <section className="card" aria-label="Loading dashboard">
+      <p className="eyebrow">Loading</p>
+      <h1>Loading your plans…</h1>
+      <p className="intro">Checking this browser for saved tasks.</p>
+    </section>
+  );
+}
+
 export default function Home() {
+  const { tasks, hydrated, deleteTask } = useTasks();
+
   return (
     <main>
-      <section className="hero">
-        <p className="eyebrow">Deadline AI</p>
-        <h1>Turn pressure into a plan.</h1>
-        <p className="intro">
-          Transform a task, its deadline, and your available hours into a
-          practical daily execution plan.
-        </p>
-      </section>
+      {hydrated ? (
+        <Dashboard tasks={tasks} onDeleteTask={deleteTask} />
+      ) : (
+        <DashboardSkeleton />
+      )}
     </main>
   );
 }
