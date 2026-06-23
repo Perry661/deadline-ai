@@ -87,8 +87,10 @@ describe("requestPlanCompletion", () => {
     expect(JSON.parse(init.body as string)).toEqual({
       model: "deepseek/deepseek-v4-pro",
       messages,
+      max_tokens: 2000,
       reasoning: { enabled: true },
       provider: { require_parameters: true },
+      temperature: 0.2,
       response_format: {
         type: "json_schema",
         json_schema: {

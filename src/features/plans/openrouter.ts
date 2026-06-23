@@ -135,8 +135,13 @@ export async function requestPlanCompletion({
       body: JSON.stringify({
         model: "deepseek/deepseek-v4-pro",
         messages,
+        max_tokens: 2000,
         reasoning: { enabled: true },
         provider: { require_parameters: true },
+        temperature: 0.2,
+        // OpenRouter models endpoint verified on 2026-06-23:
+        // deepseek/deepseek-v4-pro supports response_format + structured_outputs.
+        // Keep strict json_schema here and retain server-side Zod validation.
         response_format: {
           type: "json_schema",
           json_schema: {
