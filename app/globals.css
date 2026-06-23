@@ -6,7 +6,7 @@
   --coral: #ff7350;
   --gold: #ffd764;
   --indigo: #6468e8;
-  --danger: #c94432;
+  --danger: #a83224;
   --border: 2px solid var(--ink);
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -195,7 +195,7 @@ main {
 
 .eyebrow {
   margin: 0 0 1rem;
-  color: var(--coral);
+  color: var(--ink);
   font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 0.16em;

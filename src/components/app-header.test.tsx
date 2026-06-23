@@ -6,6 +6,10 @@ import { AppHeader } from "./app-header";
 it("shows the product identity and new-task action", () => {
   render(<AppHeader />);
   expect(screen.getByText("Deadline AI")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Deadline AI" })).toHaveAttribute(
+    "href",
+    "/",
+  );
   expect(screen.getByRole("link", { name: /new task/i })).toHaveAttribute(
     "href",
     "/tasks/new",
