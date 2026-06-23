@@ -24,17 +24,22 @@ export const PLAN_RESPONSE_JSON_SCHEMA = {
     "days",
   ],
   properties: {
-    title: { type: "string" },
-    summary: { type: "string" },
+    title: { type: "string", minLength: 1, maxLength: 120 },
+    summary: { type: "string", minLength: 1, maxLength: 600 },
     feasibility: {
       type: "string",
       enum: ["on_track", "at_risk", "unrealistic"],
     },
-    riskExplanation: { type: "string" },
-    scopeRecommendation: { type: "string" },
-    totalEstimatedMinutes: { type: "integer" },
+    riskExplanation: { type: "string", minLength: 1, maxLength: 600 },
+    scopeRecommendation: {
+      type: "string",
+      minLength: 1,
+      maxLength: 600,
+    },
+    totalEstimatedMinutes: { type: "integer", minimum: 1 },
     days: {
       type: "array",
+      minItems: 1,
       items: {
         type: "object",
         additionalProperties: false,
@@ -44,17 +49,22 @@ export const PLAN_RESPONSE_JSON_SCHEMA = {
             type: "string",
             pattern: "^\\d{4}-\\d{2}-\\d{2}$",
           },
-          dailyFocus: { type: "string" },
-          totalMinutes: { type: "integer" },
+          dailyFocus: { type: "string", minLength: 1, maxLength: 240 },
+          totalMinutes: { type: "integer", minimum: 1 },
           steps: {
             type: "array",
+            minItems: 1,
             items: {
               type: "object",
               additionalProperties: false,
               required: ["title", "estimatedMinutes"],
               properties: {
-                title: { type: "string" },
-                estimatedMinutes: { type: "integer" },
+                title: { type: "string", minLength: 1, maxLength: 240 },
+                estimatedMinutes: {
+                  type: "integer",
+                  minimum: 1,
+                  maximum: 720,
+                },
               },
             },
           },

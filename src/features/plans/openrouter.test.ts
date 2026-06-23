@@ -114,12 +114,29 @@ describe("requestPlanCompletion", () => {
         "days",
       ],
       properties: {
+        title: { type: "string", minLength: 1, maxLength: 120 },
+        summary: { type: "string", minLength: 1, maxLength: 600 },
         feasibility: {
           type: "string",
           enum: ["on_track", "at_risk", "unrealistic"],
         },
+        riskExplanation: {
+          type: "string",
+          minLength: 1,
+          maxLength: 600,
+        },
+        scopeRecommendation: {
+          type: "string",
+          minLength: 1,
+          maxLength: 600,
+        },
+        totalEstimatedMinutes: {
+          type: "integer",
+          minimum: 1,
+        },
         days: {
           type: "array",
+          minItems: 1,
           items: {
             type: "object",
             additionalProperties: false,
@@ -134,12 +151,34 @@ describe("requestPlanCompletion", () => {
                 type: "string",
                 pattern: "^\\d{4}-\\d{2}-\\d{2}$",
               },
+              dailyFocus: {
+                type: "string",
+                minLength: 1,
+                maxLength: 240,
+              },
+              totalMinutes: {
+                type: "integer",
+                minimum: 1,
+              },
               steps: {
                 type: "array",
+                minItems: 1,
                 items: {
                   type: "object",
                   additionalProperties: false,
                   required: ["title", "estimatedMinutes"],
+                  properties: {
+                    title: {
+                      type: "string",
+                      minLength: 1,
+                      maxLength: 240,
+                    },
+                    estimatedMinutes: {
+                      type: "integer",
+                      minimum: 1,
+                      maximum: 720,
+                    },
+                  },
                 },
               },
             },
