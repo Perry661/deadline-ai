@@ -5,3 +5,7 @@
 node_modules/
 .DS_Store
 .worktrees/
+out/
+coverage/
+playwright-report/
+test-results/
