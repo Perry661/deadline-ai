@@ -233,6 +233,78 @@ h1 {
   margin-top: 1rem;
 }
 
+.newTaskPage {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.newTaskIntro {
+  max-width: 52rem;
+}
+
+.taskForm {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.taskFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.fieldLabel {
+  font-weight: 900;
+}
+
+.fieldControl {
+  width: 100%;
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  padding: 0.8rem 0.9rem;
+}
+
+.fieldControl:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.textareaControl {
+  resize: vertical;
+}
+
+.fieldError {
+  color: var(--danger);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.stopButton {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0;
+  background: var(--surface);
+}
+
+.stopIcon {
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  background: var(--danger);
+}
+
 @media (max-width: 720px) {
   :root {
     --shadow-hard: 2px 2px 0 var(--ink);
@@ -254,7 +326,8 @@ h1 {
 
   .cardGrid,
   .splitGrid,
-  .twoColumn {
+  .twoColumn,
+  .taskFormGrid {
     grid-template-columns: 1fr;
   }
 }
