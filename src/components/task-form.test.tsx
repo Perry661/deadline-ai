@@ -157,6 +157,10 @@ describe("TaskForm", () => {
     expect(
       screen.getByRole("button", { name: /stop generation/i }),
     ).toBeVisible();
+    expect(screen.getByText("Generating your plan…")).toBeVisible();
+    expect(
+      screen.getByText("This can take up to a minute with the live model."),
+    ).toBeVisible();
     expect(screen.getByLabelText(/task description/i)).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: /stop generation/i }));

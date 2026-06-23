@@ -59,22 +59,22 @@ export function TaskCard({ task, onDeleteTask }: TaskCardProps) {
   const progress = calculateProgress(task);
 
   return (
-    <article className="card" aria-labelledby={`${task.id}-title`}>
+    <article className="card taskCard" aria-labelledby={`${task.id}-title`}>
       <div>
         <p className="eyebrow">{formatFeasibility(task.plan.feasibility)}</p>
-        <h2 id={`${task.id}-title`}>
+        <h2 className="taskCardTitle" id={`${task.id}-title`}>
           <Link href={`/tasks/${task.id}`}>{title}</Link>
         </h2>
       </div>
 
-      <p>
+      <p className="taskCardMeta">
         <span>Deadline: </span>
         <span>{formatDeadline(task.deadline)}</span>
         <span aria-hidden="true"> · </span>
         <span>{formatRemainingDays(task.deadline)}</span>
       </p>
 
-      <div>
+      <div className="taskCardProgress">
         <progress
           aria-label={`Progress for ${title}`}
           max={100}

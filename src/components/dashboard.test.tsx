@@ -68,6 +68,17 @@ it("shows stored tasks and lets users delete one", async () => {
   expect(screen.getByText("Jul 1, 2026")).toBeVisible();
   expect(screen.getByText("50%")).toBeVisible();
   expect(screen.getByText("AT RISK")).toBeVisible();
+  expect(screen.getByRole("article")).toHaveClass("taskCard");
+  expect(screen.getByRole("heading", { name: "Ship the MVP" })).toHaveClass(
+    "taskCardTitle",
+  );
+  expect(screen.getByText(/deadline:/i).closest("p")).toHaveClass(
+    "taskCardMeta",
+  );
+  expect(
+    screen.getByRole("progressbar", { name: "Progress for Ship the MVP" })
+      .parentElement,
+  ).toHaveClass("taskCardProgress");
 
   await user.click(screen.getByRole("button", { name: "Delete Ship the MVP" }));
 

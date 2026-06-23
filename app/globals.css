@@ -291,6 +291,27 @@ h1 {
   justify-content: flex-start;
 }
 
+.generationStatus {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.generationStatusTitle,
+.generationStatusText {
+  margin: 0;
+}
+
+.generationStatusTitle {
+  font-weight: 900;
+}
+
+.generationStatusText {
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
 .stopButton {
   width: 2.75rem;
   min-width: 2.75rem;
@@ -356,6 +377,42 @@ h1 {
 .progressSummary progress {
   width: 100%;
   height: 1rem;
+}
+
+.taskCard {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  min-inline-size: 0;
+}
+
+.taskCardTitle {
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.taskCardMeta {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.taskCardProgress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+  font-weight: 900;
+}
+
+.taskCardProgress progress {
+  width: 100%;
+  min-width: 0;
 }
 
 .planDetailActions {
@@ -448,6 +505,10 @@ h1 {
   .button {
     width: 100%;
     box-shadow: var(--shadow-hard);
+  }
+
+  .generationStatus {
+    align-items: flex-start;
   }
 
   .stopButton {

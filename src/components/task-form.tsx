@@ -300,14 +300,22 @@ export function TaskForm() {
 
       <div className="formActions">
         {isGenerating ? (
-          <button
-            aria-label="Stop generation"
-            className="button stopButton"
-            onClick={handleStop}
-            type="button"
-          >
-            <span aria-hidden="true" className="stopIcon" />
-          </button>
+          <div className="generationStatus" role="status">
+            <button
+              aria-label="Stop generation"
+              className="button stopButton"
+              onClick={handleStop}
+              type="button"
+            >
+              <span aria-hidden="true" className="stopIcon" />
+            </button>
+            <div>
+              <p className="generationStatusTitle">Generating your plan…</p>
+              <p className="generationStatusText">
+                This can take up to a minute with the live model.
+              </p>
+            </div>
+          </div>
         ) : (
           <button className="button buttonPrimary" type="submit">
             Generate plan
