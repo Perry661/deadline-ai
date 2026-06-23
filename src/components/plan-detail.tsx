@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { PlanRequest } from "../features/plans/schema";
 import {
@@ -27,7 +27,10 @@ type PlanDetailProps = {
   task?: StoredTask;
   onUpdate: (task: StoredTask) => void;
   onDelete: (taskId: string) => void;
-  onRegenerate?: (input: PlanRequest) => Promise<Plan>;
+  onRegenerate?: (request: {
+    input: PlanRequest;
+    signal: AbortSignal;
+  }) => Promise<Plan>;
 };
 
 type PlanDetailPageProps = {
@@ -135,6 +138,23 @@ export function PlanDetail({
   >(undefined);
   const requestSequence = useRef(0);
 
+  function isActiveRequest(requestId: number): boolean {
+    return activeRequest.current?.id === requestId;
+  }
+
+  function cancelActiveRequest() {
+    activeRequest.current?.controller.abort();
+    activeRequest.current = undefined;
+    setStatus("idle");
+  }
+
+  useEffect(() => {
+    return () => {
+      activeRequest.current?.controller.abort();
+      activeRequest.current = undefined;
+    };
+  }, []);
+
   if (!task) {
     return <MissingPlanState />;
   }
@@ -144,10 +164,6 @@ export function PlanDetail({
   const sortedDays = [...currentTask.plan.days].sort((firstDay, secondDay) =>
     firstDay.date.localeCompare(secondDay.date),
   );
-
-  function isActiveRequest(requestId: number): boolean {
-    return activeRequest.current?.id === requestId;
-  }
 
   function handleToggleStep(stepId: string) {
     onUpdate(toggleStep(currentTask, stepId));
@@ -159,6 +175,7 @@ export function PlanDetail({
       return;
     }
 
+    cancelActiveRequest();
     onDelete(currentTask.id);
   }
 
@@ -175,7 +192,7 @@ export function PlanDetail({
 
     try {
       const plan = onRegenerate
-        ? await onRegenerate(input)
+        ? await onRegenerate({ input, signal: controller.signal })
         : await requestRegeneratedPlan(input, controller.signal);
 
       if (!isActiveRequest(requestId)) {
@@ -206,9 +223,7 @@ export function PlanDetail({
   }
 
   function handleStopRegeneration() {
-    activeRequest.current?.controller.abort();
-    activeRequest.current = undefined;
-    setStatus("idle");
+    cancelActiveRequest();
   }
 
   return (
@@ -216,6 +231,11 @@ export function PlanDetail({
       <PlanHeader task={currentTask} />
 
       <div className="planDetailActions">
+        {isRegenerating ? (
+          <span className="statusText" role="status">
+            Regenerating…
+          </span>
+        ) : null}
         {isRegenerating ? (
           <button
             aria-label="Stop regeneration"

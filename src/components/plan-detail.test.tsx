@@ -86,6 +86,25 @@ function planWithTitle(title: string): Plan {
   };
 }
 
+function deferredPlan(plan: Plan): {
+  promise: Promise<Plan>;
+  resolve: () => void;
+  reject: (error: unknown) => void;
+} {
+  let resolvePromise: (plan: Plan) => void;
+  let rejectPromise: (error: unknown) => void;
+  const promise = new Promise<Plan>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+
+  return {
+    promise,
+    resolve: () => resolvePromise(plan),
+    reject: (error) => rejectPromise(error),
+  };
+}
+
 describe("PlanDetail", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -201,11 +220,14 @@ describe("PlanDetail", () => {
     await user.click(screen.getByRole("button", { name: /regenerate plan/i }));
 
     expect(regenerate).toHaveBeenCalledWith({
-      taskDescription: "Ship the Deadline AI MVP",
-      deadline: "2026-07-01",
-      hoursPerDay: 2,
-      currentDate: "2026-06-23",
-      timeZone: expect.any(String),
+      input: {
+        taskDescription: "Ship the Deadline AI MVP",
+        deadline: "2026-07-01",
+        hoursPerDay: 2,
+        currentDate: "2026-06-23",
+        timeZone: expect.any(String),
+      },
+      signal: expect.any(AbortSignal),
     });
     await waitFor(() => {
       expect(updateTask).toHaveBeenCalledTimes(1);
@@ -246,6 +268,100 @@ describe("PlanDetail", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Ship the MVP" }),
     ).toBeVisible();
+  });
+
+  it("lets users stop regeneration and ignores the stopped result", async () => {
+    const user = userEvent.setup();
+    const updateTask = vi.fn();
+    const pendingPlan = deferredPlan(planWithTitle("Stopped Plan"));
+    let capturedSignal: AbortSignal | undefined;
+    const regenerate = vi.fn(({ signal }: { signal: AbortSignal }) => {
+      capturedSignal = signal;
+      return pendingPlan.promise;
+    });
+
+    render(
+      <PlanDetail
+        task={task}
+        onUpdate={updateTask}
+        onDelete={() => undefined}
+        onRegenerate={regenerate}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /regenerate plan/i }));
+    expect(
+      screen.getByRole("button", { name: /stop regeneration/i }),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: /stop regeneration/i }));
+
+    expect(capturedSignal?.aborted).toBe(true);
+    pendingPlan.resolve();
+    await Promise.resolve();
+    expect(updateTask).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Ship the MVP" }),
+    ).toBeVisible();
+  });
+
+  it("aborts regeneration when a confirmed delete happens", async () => {
+    const user = userEvent.setup();
+    const updateTask = vi.fn();
+    const deleteTask = vi.fn();
+    const pendingPlan = deferredPlan(planWithTitle("Deleted Plan"));
+    let capturedSignal: AbortSignal | undefined;
+    const regenerate = vi.fn(({ signal }: { signal: AbortSignal }) => {
+      capturedSignal = signal;
+      return pendingPlan.promise;
+    });
+
+    render(
+      <PlanDetail
+        task={task}
+        onUpdate={updateTask}
+        onDelete={deleteTask}
+        onRegenerate={regenerate}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /regenerate plan/i }));
+    await user.click(screen.getByRole("button", { name: /delete plan/i }));
+    await user.click(screen.getByRole("button", { name: /confirm delete/i }));
+
+    expect(capturedSignal?.aborted).toBe(true);
+    expect(deleteTask).toHaveBeenCalledWith("task-1");
+    pendingPlan.resolve();
+    await Promise.resolve();
+    expect(updateTask).not.toHaveBeenCalled();
+  });
+
+  it("shows a safe error for malformed API regeneration responses", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("not json", {
+          status: 502,
+          headers: { "Content-Type": "text/plain" },
+        }),
+      ),
+    );
+
+    render(
+      <PlanDetail
+        task={task}
+        onUpdate={() => undefined}
+        onDelete={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /regenerate plan/i }));
+
+    expect(
+      await screen.findByText("Unable to regenerate the plan."),
+    ).toBeVisible();
+    expect(screen.queryByText(/json/i)).not.toBeInTheDocument();
   });
 
   it("renders a dashboard recovery link when the task is missing", () => {
