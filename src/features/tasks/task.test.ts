@@ -69,4 +69,11 @@ describe("task domain", () => {
     expect(updated).not.toBe(task);
     expect(updated.plan.days[0]).not.toBe(task.plan.days[0]);
   });
+
+  it("preserves the same task when toggling a missing step", () => {
+    const updated = toggleStep(task, "missing-step");
+
+    expect(updated).toBe(task);
+    expect(updated.updatedAt).toBe(task.updatedAt);
+  });
 });

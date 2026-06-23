@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PlanRequest } from "../plans/schema";
 import type { Plan, StoredTask } from "./task";
 import { createStoredTask } from "./task";
-import { loadTasks, removeTask, upsertTask } from "./storage";
+import { loadTasks, saveTasks } from "./storage";
 
 type UseTasksValue = {
   tasks: StoredTask[];
@@ -15,6 +15,37 @@ type UseTasksValue = {
   deleteTask: (taskId: string) => void;
   getTask: (taskId: string) => StoredTask | undefined;
 };
+
+function getBrowserStorage(): Storage | undefined {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function upsertTaskInList(
+  existingTasks: StoredTask[],
+  task: StoredTask,
+): StoredTask[] {
+  const taskIndex = existingTasks.findIndex(
+    (existingTask) => existingTask.id === task.id,
+  );
+
+  return taskIndex === -1
+    ? [...existingTasks, task]
+    : existingTasks.map((existingTask, index) =>
+        index === taskIndex ? task : existingTask,
+      );
+}
+
+function persistTasks(tasks: StoredTask[]): void {
+  const storage = getBrowserStorage();
+
+  if (storage) {
+    saveTasks(storage, tasks);
+  }
+}
 
 export function useTasks(): UseTasksValue {
   const [tasks, setTasks] = useState<StoredTask[]>([]);
@@ -28,7 +59,9 @@ export function useTasks(): UseTasksValue {
         return;
       }
 
-      setTasks(loadTasks(window.localStorage));
+      const storage = getBrowserStorage();
+
+      setTasks(storage ? loadTasks(storage) : []);
       setHydrated(true);
     });
 
@@ -39,9 +72,14 @@ export function useTasks(): UseTasksValue {
 
   const addTask = useCallback((input: PlanRequest, plan: Plan) => {
     const task = createStoredTask(input, plan);
-    const nextTasks = upsertTask(window.localStorage, task);
 
-    setTasks(nextTasks);
+    setTasks((existingTasks) => {
+      const nextTasks = upsertTaskInList(existingTasks, task);
+
+      persistTasks(nextTasks);
+
+      return nextTasks;
+    });
 
     return task;
   }, []);
@@ -51,15 +89,29 @@ export function useTasks(): UseTasksValue {
       ...task,
       updatedAt: new Date().toISOString(),
     };
-    const nextTasks = upsertTask(window.localStorage, taskWithUpdatedTimestamp);
 
-    setTasks(nextTasks);
+    setTasks((existingTasks) => {
+      const nextTasks = upsertTaskInList(
+        existingTasks,
+        taskWithUpdatedTimestamp,
+      );
+
+      persistTasks(nextTasks);
+
+      return nextTasks;
+    });
 
     return taskWithUpdatedTimestamp;
   }, []);
 
   const deleteTask = useCallback((taskId: string) => {
-    setTasks(removeTask(window.localStorage, taskId));
+    setTasks((existingTasks) => {
+      const nextTasks = existingTasks.filter((task) => task.id !== taskId);
+
+      persistTasks(nextTasks);
+
+      return nextTasks;
+    });
   }, []);
 
   const getTask = useCallback(

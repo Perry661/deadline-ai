@@ -3,7 +3,13 @@ import { storedTaskSchema, type StoredTask } from "./task";
 const TASKS_STORAGE_KEY = "deadline-ai.tasks.v1";
 
 export function loadTasks(storage: Storage): StoredTask[] {
-  const storedValue = storage.getItem(TASKS_STORAGE_KEY);
+  let storedValue: string | null;
+
+  try {
+    storedValue = storage.getItem(TASKS_STORAGE_KEY);
+  } catch {
+    return [];
+  }
 
   if (storedValue === null) {
     return [];
@@ -29,7 +35,12 @@ export function loadTasks(storage: Storage): StoredTask[] {
 }
 
 export function saveTasks(storage: Storage, tasks: StoredTask[]): void {
-  storage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+  try {
+    storage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+  } catch {
+    // Storage can be disabled, blocked, or quota-limited. Keep callers usable
+    // even when persistence is unavailable.
+  }
 }
 
 export function upsertTask(

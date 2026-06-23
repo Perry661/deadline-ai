@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { StoredTask } from "./task";
-import { loadTasks, removeTask, saveTasks } from "./storage";
+import { loadTasks, removeTask, saveTasks, upsertTask } from "./storage";
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -85,6 +85,15 @@ describe("task storage", () => {
     expect(loadTasks(storage)).toEqual([]);
   });
 
+  it("returns an empty list when stored tasks cannot be read", () => {
+    const storage = new MemoryStorage();
+    storage.getItem = () => {
+      throw new DOMException("Storage access denied", "SecurityError");
+    };
+
+    expect(loadTasks(storage)).toEqual([]);
+  });
+
   it("preserves valid tasks when another stored entry is invalid", () => {
     const storage = new MemoryStorage();
     storage.setItem(
@@ -102,5 +111,16 @@ describe("task storage", () => {
 
     expect(removeTask(storage, "task-1")).toEqual([otherTask]);
     expect(loadTasks(storage)).toEqual([otherTask]);
+  });
+
+  it("returns the next task list when persistence fails", () => {
+    const storage = new MemoryStorage();
+    storage.setItem = () => {
+      throw new DOMException("Storage quota exceeded", "QuotaExceededError");
+    };
+
+    expect(saveTasks(storage, [task])).toBeUndefined();
+    expect(upsertTask(storage, task)).toEqual([task]);
+    expect(removeTask(storage, "task-1")).toEqual([]);
   });
 });

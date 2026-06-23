@@ -58,6 +58,14 @@ export function calculateProgress(task: StoredTask): number {
 }
 
 export function toggleStep(task: StoredTask, stepId: string): StoredTask {
+  const hasMatchingStep = task.plan.days.some((day) =>
+    day.steps.some((step) => step.id === stepId),
+  );
+
+  if (!hasMatchingStep) {
+    return task;
+  }
+
   return {
     ...task,
     updatedAt: new Date().toISOString(),
