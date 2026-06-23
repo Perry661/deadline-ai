@@ -305,6 +305,132 @@ h1 {
   background: var(--danger);
 }
 
+.planDetail {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.planHeader {
+  background: var(--gold);
+}
+
+.planFacts,
+.assessmentList {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+}
+
+.planFacts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.planFacts div,
+.assessmentList div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.planFacts dt,
+.assessmentList dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.planFacts dd,
+.assessmentList dd {
+  margin: 0;
+  font-weight: 800;
+}
+
+.progressSummary {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+  font-weight: 900;
+}
+
+.progressSummary progress {
+  width: 100%;
+  height: 1rem;
+}
+
+.planDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.confirmationText {
+  color: var(--danger);
+  font-weight: 900;
+}
+
+.planDetailGrid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1rem, 3vw, 1.5rem);
+  align-items: start;
+}
+
+.riskPanel h2,
+.sectionHeading h2 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+
+.dailyPlanList {
+  display: grid;
+  gap: 1rem;
+}
+
+.dayPlan {
+  display: grid;
+  gap: 1rem;
+  min-inline-size: 0;
+}
+
+.dayPlan legend {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.dayPlanMeta {
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
+.stepList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.stepItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-weight: 800;
+}
+
+.stepItem input {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  accent-color: var(--coral);
+}
+
+.recoveryState {
+  display: grid;
+  gap: 1.25rem;
+}
+
 @media (max-width: 720px) {
   :root {
     --shadow-hard: 2px 2px 0 var(--ink);
@@ -331,6 +457,8 @@ h1 {
   .cardGrid,
   .splitGrid,
   .twoColumn,
+  .planFacts,
+  .planDetailGrid,
   .taskFormGrid {
     grid-template-columns: 1fr;
   }
