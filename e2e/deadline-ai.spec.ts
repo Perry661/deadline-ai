@@ -35,7 +35,7 @@ async function openNewTaskFromEmptyDashboard(page: Page) {
 
 async function fillTaskForm(page: Page) {
   await page.getByLabel("Task description").fill(TASK_DESCRIPTION);
-  await page.getByLabel("Deadline").fill(futureDate(8));
+  await page.getByLabel("Deadline").fill(DEADLINE);
   await page.getByLabel("Hours per day").fill(HOURS_PER_DAY);
 }
 
