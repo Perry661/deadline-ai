@@ -1,8 +1,9 @@
+import "server-only";
+
 import { z } from "zod";
 
 import { PlanError } from "./errors";
 import type { PlanningMessage } from "./prompt";
-import { generatedPlanSchema } from "./schema";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const UPSTREAM_ERROR_MESSAGE =
@@ -10,13 +11,70 @@ const UPSTREAM_ERROR_MESSAGE =
 const INVALID_OUTPUT_MESSAGE =
   "Planning service returned an invalid response.";
 
+export const PLAN_RESPONSE_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "title",
+    "summary",
+    "feasibility",
+    "riskExplanation",
+    "scopeRecommendation",
+    "totalEstimatedMinutes",
+    "days",
+  ],
+  properties: {
+    title: { type: "string" },
+    summary: { type: "string" },
+    feasibility: {
+      type: "string",
+      enum: ["on_track", "at_risk", "unrealistic"],
+    },
+    riskExplanation: { type: "string" },
+    scopeRecommendation: { type: "string" },
+    totalEstimatedMinutes: { type: "integer" },
+    days: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["date", "dailyFocus", "totalMinutes", "steps"],
+        properties: {
+          date: {
+            type: "string",
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+          },
+          dailyFocus: { type: "string" },
+          totalMinutes: { type: "integer" },
+          steps: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["title", "estimatedMinutes"],
+              properties: {
+                title: { type: "string" },
+                estimatedMinutes: { type: "integer" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
 const completionEnvelopeSchema = z.object({
   choices: z
     .array(
       z.object({
-        message: z.object({
-          content: z.string().nullable(),
-        }),
+        finish_reason: z.string().nullable().optional(),
+        error: z.unknown().optional(),
+        message: z
+          .object({
+            content: z.string().nullable(),
+          })
+          .optional(),
       }),
     )
     .min(1),
@@ -29,14 +87,14 @@ type RequestPlanCompletionInput = {
 };
 
 function upstreamError(): PlanError {
-  return new PlanError("UPSTREAM_ERROR", 502, UPSTREAM_ERROR_MESSAGE);
+  return new PlanError("UPSTREAM_ERROR", UPSTREAM_ERROR_MESSAGE, 502);
 }
 
 function invalidOutputError(): PlanError {
   return new PlanError(
     "INVALID_MODEL_OUTPUT",
-    502,
     INVALID_OUTPUT_MESSAGE,
+    502,
   );
 }
 
@@ -68,18 +126,27 @@ export async function requestPlanCompletion({
         model: "deepseek/deepseek-v4-pro",
         messages,
         reasoning: { enabled: true },
+        provider: { require_parameters: true },
         response_format: {
           type: "json_schema",
           json_schema: {
             name: "generated_plan",
             strict: true,
-            schema: z.toJSONSchema(generatedPlanSchema),
+            schema: PLAN_RESPONSE_JSON_SCHEMA,
           },
         },
       }),
       signal,
     });
   } catch (error) {
+    if (signal?.aborted) {
+      if (signal.reason !== undefined) {
+        throw signal.reason;
+      }
+
+      throw error;
+    }
+
     if (isAbortError(error)) {
       throw error;
     }
@@ -91,16 +158,32 @@ export async function requestPlanCompletion({
     throw upstreamError();
   }
 
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw upstreamError();
+  }
+
   let envelope: z.infer<typeof completionEnvelopeSchema>;
 
   try {
-    envelope = completionEnvelopeSchema.parse(await response.json());
+    envelope = completionEnvelopeSchema.parse(body);
   } catch {
     throw invalidOutputError();
   }
 
-  const content = envelope.choices[0].message.content;
-  if (content === null || content.trim() === "") {
+  const choice = envelope.choices[0];
+  if (
+    choice.finish_reason === "error" ||
+    (choice.error !== undefined && choice.error !== null)
+  ) {
+    throw upstreamError();
+  }
+
+  const content = choice.message?.content;
+  if (content === undefined || content === null || content.trim() === "") {
     throw invalidOutputError();
   }
 

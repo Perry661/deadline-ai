@@ -8,7 +8,7 @@ export class PlanError extends Error {
   readonly code: PlanErrorCode;
   readonly status: number;
 
-  constructor(code: PlanErrorCode, status: number, message: string) {
+  constructor(code: PlanErrorCode, message: string, status: number) {
     super(message);
     this.name = "PlanError";
     this.code = code;
