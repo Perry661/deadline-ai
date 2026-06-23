@@ -3,9 +3,21 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { alternatePlanFixture, planFixture } from "./fixtures/plan";
 
 const TASK_DESCRIPTION = "Ship the Deadline AI MVP";
-const DEADLINE = "2026-07-01";
 const HOURS_PER_DAY = "2";
 const STORAGE_KEY = "deadline-ai.tasks.v1";
+
+function futureDate(daysFromToday: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+const DEADLINE = futureDate(8);
 
 async function openNewTaskFromEmptyDashboard(page: Page) {
   await page.goto("/");
@@ -23,7 +35,7 @@ async function openNewTaskFromEmptyDashboard(page: Page) {
 
 async function fillTaskForm(page: Page) {
   await page.getByLabel("Task description").fill(TASK_DESCRIPTION);
-  await page.getByLabel("Deadline").fill(DEADLINE);
+  await page.getByLabel("Deadline").fill(futureDate(8));
   await page.getByLabel("Hours per day").fill(HOURS_PER_DAY);
 }
 
@@ -176,6 +188,8 @@ test("shows an actionable generation error and lets users retry", async ({
   await expect(page.getByText("Plan generation failed")).toBeVisible();
   await expect(page.getByText("Unable to generate a plan.")).toBeVisible();
   await expect(page.getByRole("button", { name: /try again/i })).toBeVisible();
+  await expectTaskInputsToRemain(page);
+  expect(requestCount).toBe(1);
 
   await page.getByRole("button", { name: /try again/i }).click();
 
@@ -183,4 +197,5 @@ test("shows an actionable generation error and lets users retry", async ({
   await expect(
     page.getByRole("heading", { name: planFixture.title }),
   ).toBeVisible();
+  expect(requestCount).toBe(2);
 });

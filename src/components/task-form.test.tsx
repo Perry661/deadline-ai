@@ -261,6 +261,32 @@ describe("TaskForm", () => {
     expect(screen.queryByText(/json/i)).not.toBeInTheDocument();
   });
 
+  it("does not expose arbitrary upstream error messages", async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: "UPSTREAM_ERROR",
+          message: "provider secret: sk-test",
+        }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+
+    render(<TaskForm />);
+    await fillValidForm(user);
+    await user.click(screen.getByRole("button", { name: /generate plan/i }));
+
+    expect(
+      await screen.findByText("Unable to generate a plan."),
+    ).toBeVisible();
+    expect(screen.queryByText(/provider secret/i)).not.toBeInTheDocument();
+  });
+
   it("ignores a canceled request that resolves after a newer successful request", async () => {
     const user = userEvent.setup();
     const firstResponse = deferredResponse(generatedPlan("First Plan"));

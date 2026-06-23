@@ -17,6 +17,7 @@ type FormErrors = {
 type Status = "idle" | "generating";
 
 type PlanResponse = {
+  code?: string;
   plan?: Plan;
   message?: string;
 };
@@ -140,7 +141,7 @@ export function TaskForm() {
       const result = await parsePlanResponse(response);
 
       if (!response.ok || !result.plan) {
-        throw new Error(result.message || GENERIC_GENERATION_ERROR);
+        throw new Error(GENERIC_GENERATION_ERROR);
       }
 
       if (!isActiveRequest(requestId)) {
@@ -164,9 +165,7 @@ export function TaskForm() {
         return;
       }
 
-      setSubmitError(
-        error instanceof Error ? error.message : GENERIC_GENERATION_ERROR,
-      );
+      setSubmitError(GENERIC_GENERATION_ERROR);
     }
   }
 
