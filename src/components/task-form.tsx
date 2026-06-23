@@ -114,24 +114,7 @@ export function TaskForm() {
     return activeRequest.current?.id === requestId;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const currentDate = formatLocalDate(new Date());
-    const validation = validateForm(
-      taskDescription,
-      deadline,
-      hoursPerDay,
-      currentDate,
-    );
-
-    setErrors(validation.errors);
-    setSubmitError(undefined);
-
-    if (!validation.input) {
-      return;
-    }
-
+  async function submitPlan(input: PlanRequest) {
     const requestId = requestSequence.current + 1;
     requestSequence.current = requestId;
     const controller = new AbortController();
@@ -146,7 +129,7 @@ export function TaskForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(validation.input),
+        body: JSON.stringify(input),
         signal: controller.signal,
       });
 
@@ -164,7 +147,7 @@ export function TaskForm() {
         return;
       }
 
-      const task = addTask(validation.input, result.plan);
+      const task = addTask(input, result.plan);
 
       activeRequest.current = undefined;
       setStatus("idle");
@@ -182,11 +165,46 @@ export function TaskForm() {
       }
 
       setSubmitError(
-        error instanceof Error && error.message === GENERIC_GENERATION_ERROR
-          ? error.message
-          : GENERIC_GENERATION_ERROR,
+        error instanceof Error ? error.message : GENERIC_GENERATION_ERROR,
       );
     }
+  }
+
+  function validateCurrentInput(): PlanRequest | undefined {
+    const currentDate = formatLocalDate(new Date());
+    const validation = validateForm(
+      taskDescription,
+      deadline,
+      hoursPerDay,
+      currentDate,
+    );
+
+    setErrors(validation.errors);
+    setSubmitError(undefined);
+
+    return validation.input;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const input = validateCurrentInput();
+
+    if (!input) {
+      return;
+    }
+
+    await submitPlan(input);
+  }
+
+  function handleRetry() {
+    const input = validateCurrentInput();
+
+    if (!input) {
+      return;
+    }
+
+    void submitPlan(input);
   }
 
   function handleStop() {
@@ -276,6 +294,7 @@ export function TaskForm() {
       {submitError ? (
         <ErrorMessage
           message={submitError}
+          onRetry={handleRetry}
           title="Plan generation failed"
         />
       ) : null}
