@@ -1,4 +1,7 @@
+"use client";
+
 import type { StoredTask } from "../features/tasks/task";
+import { useTasks } from "../features/tasks/use-tasks";
 import { EmptyState } from "./empty-state";
 import { TaskCard } from "./task-card";
 
@@ -32,5 +35,25 @@ export function Dashboard({ tasks, onDeleteTask }: DashboardProps) {
         ))}
       </div>
     </section>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <section className="card" aria-label="Loading dashboard">
+      <p className="eyebrow">Loading</p>
+      <h1>Loading your plans…</h1>
+      <p className="intro">Checking this browser for saved tasks.</p>
+    </section>
+  );
+}
+
+export function DashboardPage() {
+  const { tasks, hydrated, deleteTask } = useTasks();
+
+  return hydrated ? (
+    <Dashboard tasks={tasks} onDeleteTask={deleteTask} />
+  ) : (
+    <DashboardSkeleton />
   );
 }

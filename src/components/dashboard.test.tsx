@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest";
 
 import type { StoredTask } from "../features/tasks/task";
 import { Dashboard } from "./dashboard";
+import { formatRemainingDays } from "./task-card";
 
 const storedTask: StoredTask = {
   id: "task-1",
@@ -46,7 +47,12 @@ const storedTask: StoredTask = {
 it("shows the empty dashboard state", () => {
   render(<Dashboard tasks={[]} onDeleteTask={() => undefined} />);
 
-  expect(screen.getByText("Turn pressure into a plan.")).toBeVisible();
+  expect(
+    screen.getByRole("heading", {
+      level: 1,
+      name: "Turn pressure into a plan.",
+    }),
+  ).toBeVisible();
   expect(
     screen.getByRole("link", { name: /create your first plan/i }),
   ).toBeVisible();
@@ -67,3 +73,17 @@ it("shows stored tasks and lets users delete one", async () => {
 
   expect(deleteTask).toHaveBeenCalledWith("task-1");
 });
+
+it.each([
+  ["2026-07-01", "2026-07-01", "Due today"],
+  ["2026-07-02", "2026-07-01", "1 day remaining"],
+  ["2026-07-04", "2026-07-01", "3 days remaining"],
+  ["2026-06-30", "2026-07-01", "Past deadline"],
+])(
+  "formats remaining days for deadline %s from today %s",
+  (deadline, today, expected) => {
+    expect(formatRemainingDays(deadline, new Date(`${today}T12:00:00Z`))).toBe(
+      expected,
+    );
+  },
+);

@@ -21,8 +21,10 @@ function formatDeadline(deadline: string): string {
   return deadlineFormatter.format(new Date(`${deadline}T00:00:00.000Z`));
 }
 
-function formatRemainingDays(deadline: string): string {
-  const today = new Date();
+export function formatRemainingDays(
+  deadline: string,
+  today = new Date(),
+): string {
   const startOfToday = Date.UTC(
     today.getFullYear(),
     today.getMonth(),
