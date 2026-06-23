@@ -1,0 +1,21 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title description">
+  <title id="title">Deadline AI</title>
+  <desc id="description">Turn pressure into a plan.</desc>
+  <rect width="1200" height="630" fill="#FFF4E2"/>
+  <rect x="60" y="60" width="1080" height="510" rx="36" fill="#FFE0A8" stroke="#1F1D1B" stroke-width="6"/>
+  <rect x="96" y="96" width="410" height="438" rx="28" fill="#FF6B57" stroke="#1F1D1B" stroke-width="5"/>
+  <text x="132" y="184" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800">Deadline AI</text>
+  <text x="132" y="260" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="700">Turn pressure</text>
+  <text x="132" y="308" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="700">into a plan.</text>
+  <rect x="132" y="374" width="278" height="70" rx="18" fill="#FFF4E2" stroke="#1F1D1B" stroke-width="4"/>
+  <text x="164" y="421" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800">Plan by deadline</text>
+  <rect x="568" y="122" width="488" height="96" rx="24" fill="#FFF4E2" stroke="#1F1D1B" stroke-width="5"/>
+  <rect x="598" y="153" width="34" height="34" rx="8" fill="#3F7DF2"/>
+  <text x="654" y="181" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">Analyze capacity</text>
+  <rect x="568" y="267" width="488" height="96" rx="24" fill="#FFF4E2" stroke="#1F1D1B" stroke-width="5"/>
+  <rect x="598" y="298" width="34" height="34" rx="8" fill="#F6B13D"/>
+  <text x="654" y="326" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">Break work into days</text>
+  <rect x="568" y="412" width="488" height="96" rx="24" fill="#FFF4E2" stroke="#1F1D1B" stroke-width="5"/>
+  <rect x="598" y="443" width="34" height="34" rx="8" fill="#69B578"/>
+  <text x="654" y="471" fill="#1F1D1B" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">Track progress locally</text>
+</svg>
