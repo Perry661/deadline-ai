@@ -129,8 +129,6 @@ export function PlanDetail({
   onDelete,
   onRegenerate,
 }: PlanDetailProps) {
-  const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
-    useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [regenerationError, setRegenerationError] = useState<string>();
   const activeRequest = useRef<
@@ -161,17 +159,23 @@ export function PlanDetail({
 
   const currentTask = task;
   const isRegenerating = status === "regenerating";
-  const sortedDays = [...currentTask.plan.days].sort((firstDay, secondDay) =>
-    firstDay.date.localeCompare(secondDay.date),
-  );
+  const sortedDays = [...currentTask.plan.days].sort((firstDay, secondDay) => {
+    const firstDayCompleted = firstDay.steps.every((step) => step.completed);
+    const secondDayCompleted = secondDay.steps.every((step) => step.completed);
+
+    if (firstDayCompleted !== secondDayCompleted) {
+      return firstDayCompleted ? 1 : -1;
+    }
+
+    return firstDay.date.localeCompare(secondDay.date);
+  });
 
   function handleToggleStep(stepId: string) {
     onUpdate(toggleStep(currentTask, stepId));
   }
 
   function handleDelete() {
-    if (!deleteConfirmationVisible) {
-      setDeleteConfirmationVisible(true);
+    if (!window.confirm("Are you sure you want to delete this plan?")) {
       return;
     }
 
@@ -255,15 +259,9 @@ export function PlanDetail({
           </button>
         )}
         <button className="button" onClick={handleDelete} type="button">
-          {deleteConfirmationVisible ? "Confirm delete" : "Delete plan"}
+          Delete plan
         </button>
       </div>
-
-      {deleteConfirmationVisible ? (
-        <p className="confirmationText">
-          This cannot be undone. Click confirm to delete.
-        </p>
-      ) : null}
 
       {regenerationError ? (
         <ErrorMessage

@@ -97,6 +97,9 @@ test("generates, persists progress for, lists, and deletes a deadline plan", asy
     }),
   ).toHaveAttribute("value", "25");
 
+  page.once("dialog", async (dialog) => {
+    await dialog.accept();
+  });
   await page
     .getByRole("button", { name: `Delete ${planFixture.title}` })
     .click();

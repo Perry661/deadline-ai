@@ -69,6 +69,15 @@ export function Dashboard({
   }
 
   function deleteSelectedTasks(): void {
+    const noun = selectedCount === 1 ? "plan" : "plans";
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedCount} selected ${noun}?`,
+      )
+    ) {
+      return;
+    }
+
     selectedTasks.forEach((task) => onDeleteTask(task.id));
     clearSelection();
   }

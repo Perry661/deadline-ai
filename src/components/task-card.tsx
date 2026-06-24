@@ -65,6 +65,12 @@ export function TaskCard({
   const title = task.plan.title;
   const progress = calculateProgress(task);
 
+  function handleDelete() {
+    if (window.confirm("Are you sure you want to delete this plan?")) {
+      onDeleteTask(task.id);
+    }
+  }
+
   return (
     <article className="card taskCard" aria-labelledby={`${task.id}-title`}>
       <label className="taskCardSelect">
@@ -106,7 +112,7 @@ export function TaskCard({
         className="button"
         type="button"
         aria-label={`Delete ${title}`}
-        onClick={() => onDeleteTask(task.id)}
+        onClick={handleDelete}
       >
         Delete
       </button>

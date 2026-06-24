@@ -76,9 +76,10 @@ it("shows the empty dashboard state", () => {
   expect(screen.getByLabelText("Import JSON")).toBeInTheDocument();
 });
 
-it("shows stored tasks and lets users delete one", async () => {
+it("shows stored tasks and lets users delete one after confirmation", async () => {
   const user = userEvent.setup();
   const deleteTask = vi.fn();
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
 
   render(<Dashboard tasks={[storedTask]} onDeleteTask={deleteTask} />);
 
@@ -100,12 +101,28 @@ it("shows stored tasks and lets users delete one", async () => {
 
   await user.click(screen.getByRole("button", { name: "Delete Ship the MVP" }));
 
+  expect(confirm).toHaveBeenCalledWith(
+    "Are you sure you want to delete this plan?",
+  );
   expect(deleteTask).toHaveBeenCalledWith("task-1");
 });
 
-it("lets users select tasks and delete the selected set", async () => {
+it("keeps a task when delete confirmation is canceled", async () => {
   const user = userEvent.setup();
   const deleteTask = vi.fn();
+  vi.spyOn(window, "confirm").mockReturnValue(false);
+
+  render(<Dashboard tasks={[storedTask]} onDeleteTask={deleteTask} />);
+
+  await user.click(screen.getByRole("button", { name: "Delete Ship the MVP" }));
+
+  expect(deleteTask).not.toHaveBeenCalled();
+});
+
+it("lets users select tasks and delete the selected set after confirmation", async () => {
+  const user = userEvent.setup();
+  const deleteTask = vi.fn();
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
 
   render(
     <Dashboard
@@ -121,8 +138,29 @@ it("lets users select tasks and delete the selected set", async () => {
 
   await user.click(screen.getByRole("button", { name: "Delete selected" }));
 
+  expect(confirm).toHaveBeenCalledWith(
+    "Are you sure you want to delete 2 selected plans?",
+  );
   expect(deleteTask).toHaveBeenCalledWith("task-1");
   expect(deleteTask).toHaveBeenCalledWith("task-2");
+});
+
+it("keeps selected tasks when bulk delete confirmation is canceled", async () => {
+  const user = userEvent.setup();
+  const deleteTask = vi.fn();
+  vi.spyOn(window, "confirm").mockReturnValue(false);
+
+  render(
+    <Dashboard
+      tasks={[storedTask, secondStoredTask]}
+      onDeleteTask={deleteTask}
+    />,
+  );
+
+  await user.click(screen.getByLabelText("Select Ship the MVP"));
+  await user.click(screen.getByRole("button", { name: "Delete selected" }));
+
+  expect(deleteTask).not.toHaveBeenCalled();
 });
 
 it("exports selected tasks as JSON and Markdown", async () => {

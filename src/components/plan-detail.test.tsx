@@ -152,6 +152,39 @@ describe("PlanDetail", () => {
     expect(within(dayGroups[1]).getByText("Jun 25, 2026")).toBeVisible();
   });
 
+  it("moves fully completed daily groups below incomplete daily groups", () => {
+    const taskWithCompletedFirstDay: StoredTask = {
+      ...task,
+      plan: {
+        ...task.plan,
+        days: task.plan.days.map((day) =>
+          day.date === "2026-06-24"
+            ? {
+                ...day,
+                steps: day.steps.map((step) => ({
+                  ...step,
+                  completed: true,
+                })),
+              }
+            : day,
+        ),
+      },
+    };
+
+    render(
+      <PlanDetail
+        task={taskWithCompletedFirstDay}
+        onUpdate={() => undefined}
+        onDelete={() => undefined}
+        onRegenerate={async () => planWithTitle("Regenerated Plan")}
+      />,
+    );
+
+    const dayGroups = screen.getAllByRole("group");
+    expect(within(dayGroups[0]).getByText("Jun 25, 2026")).toBeVisible();
+    expect(within(dayGroups[1]).getByText("Jun 24, 2026")).toBeVisible();
+  });
+
   it("calls onUpdate with a completed step and recalculated progress when a step is checked", async () => {
     const user = userEvent.setup();
     const updateTask = vi.fn();
@@ -178,9 +211,32 @@ describe("PlanDetail", () => {
     expect(calculateProgress(updatedTask)).toBe(67);
   });
 
-  it("requires confirmation before deleting the task", async () => {
+  it("deletes the task after confirming the browser prompt", async () => {
     const user = userEvent.setup();
     const deleteTask = vi.fn();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(
+      <PlanDetail
+        task={task}
+        onUpdate={() => undefined}
+        onDelete={deleteTask}
+        onRegenerate={async () => planWithTitle("Regenerated Plan")}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /delete plan/i }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Are you sure you want to delete this plan?",
+    );
+    expect(deleteTask).toHaveBeenCalledWith("task-1");
+  });
+
+  it("keeps the task when the browser delete prompt is canceled", async () => {
+    const user = userEvent.setup();
+    const deleteTask = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
 
     render(
       <PlanDetail
@@ -194,13 +250,6 @@ describe("PlanDetail", () => {
     await user.click(screen.getByRole("button", { name: /delete plan/i }));
 
     expect(deleteTask).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("This cannot be undone. Click confirm to delete."),
-    ).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: /confirm delete/i }));
-
-    expect(deleteTask).toHaveBeenCalledWith("task-1");
   });
 
   it("regenerates with the original task inputs and only updates after a successful plan", async () => {
@@ -326,8 +375,8 @@ describe("PlanDetail", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /regenerate plan/i }));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     await user.click(screen.getByRole("button", { name: /delete plan/i }));
-    await user.click(screen.getByRole("button", { name: /confirm delete/i }));
 
     expect(capturedSignal?.aborted).toBe(true);
     expect(deleteTask).toHaveBeenCalledWith("task-1");
