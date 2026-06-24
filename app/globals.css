@@ -386,6 +386,21 @@ h1 {
   min-inline-size: 0;
 }
 
+.taskCardSelect {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.taskCardSelect input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--coral);
+}
+
 .taskCardTitle {
   margin: 0;
   max-width: 100%;
@@ -413,6 +428,31 @@ h1 {
 .taskCardProgress progress {
   width: 100%;
   min-width: 0;
+}
+
+.bulkActionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: clamp(1rem, 3vw, 1.5rem) 0;
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-hard);
+  padding: 1rem;
+}
+
+.bulkActionBar p {
+  margin: 0;
+  font-weight: 900;
+}
+
+.bulkActionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
 }
 
 .planDetailActions {
@@ -505,6 +545,15 @@ h1 {
   .button {
     width: 100%;
     box-shadow: var(--shadow-hard);
+  }
+
+  .bulkActionBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bulkActionButtons {
+    justify-content: stretch;
   }
 
   .generationStatus {

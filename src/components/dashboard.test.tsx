@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import type { StoredTask } from "../features/tasks/task";
 import { Dashboard } from "./dashboard";
@@ -44,6 +44,23 @@ const storedTask: StoredTask = {
   },
 };
 
+const secondStoredTask: StoredTask = {
+  ...storedTask,
+  id: "task-2",
+  taskDescription: "Record a hackathon demo video",
+  deadline: "2026-07-02",
+  plan: {
+    ...storedTask.plan,
+    title: "Record the demo video",
+    feasibility: "on_track",
+  },
+};
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
 it("shows the empty dashboard state", () => {
   render(<Dashboard tasks={[]} onDeleteTask={() => undefined} />);
 
@@ -83,6 +100,56 @@ it("shows stored tasks and lets users delete one", async () => {
   await user.click(screen.getByRole("button", { name: "Delete Ship the MVP" }));
 
   expect(deleteTask).toHaveBeenCalledWith("task-1");
+});
+
+it("lets users select tasks and delete the selected set", async () => {
+  const user = userEvent.setup();
+  const deleteTask = vi.fn();
+
+  render(
+    <Dashboard
+      tasks={[storedTask, secondStoredTask]}
+      onDeleteTask={deleteTask}
+    />,
+  );
+
+  await user.click(screen.getByLabelText("Select Ship the MVP"));
+  await user.click(screen.getByLabelText("Select Record the demo video"));
+
+  expect(screen.getByText("2 tasks selected")).toBeVisible();
+
+  await user.click(screen.getByRole("button", { name: "Delete selected" }));
+
+  expect(deleteTask).toHaveBeenCalledWith("task-1");
+  expect(deleteTask).toHaveBeenCalledWith("task-2");
+});
+
+it("exports selected tasks as JSON and Markdown", async () => {
+  const user = userEvent.setup();
+  const deleteTask = vi.fn();
+  const createObjectUrl = vi
+    .spyOn(URL, "createObjectURL")
+    .mockReturnValue("blob:deadline-ai-export");
+  const revokeObjectUrl = vi
+    .spyOn(URL, "revokeObjectURL")
+    .mockImplementation(() => undefined);
+  const click = vi
+    .spyOn(HTMLAnchorElement.prototype, "click")
+    .mockImplementation(() => undefined);
+
+  render(<Dashboard tasks={[storedTask]} onDeleteTask={deleteTask} />);
+
+  await user.click(screen.getByLabelText("Select Ship the MVP"));
+  await user.click(screen.getByRole("button", { name: "Export JSON" }));
+  await user.click(screen.getByRole("button", { name: "Export Markdown" }));
+
+  expect(createObjectUrl).toHaveBeenCalledTimes(2);
+  expect(click).toHaveBeenCalledTimes(2);
+  expect(revokeObjectUrl).toHaveBeenCalledWith("blob:deadline-ai-export");
+
+  click.mockRestore();
+  createObjectUrl.mockRestore();
+  revokeObjectUrl.mockRestore();
 });
 
 it.each([

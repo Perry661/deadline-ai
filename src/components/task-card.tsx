@@ -6,8 +6,10 @@ import {
 } from "../features/tasks/task";
 
 type TaskCardProps = {
+  isSelected?: boolean;
   task: StoredTask;
   onDeleteTask: (taskId: string) => void;
+  onSelectionChange?: (taskId: string, selected: boolean) => void;
 };
 
 const deadlineFormatter = new Intl.DateTimeFormat("en-US", {
@@ -54,12 +56,29 @@ function formatFeasibility(feasibility: StoredTask["plan"]["feasibility"]) {
   return feasibility.replaceAll("_", " ").toUpperCase();
 }
 
-export function TaskCard({ task, onDeleteTask }: TaskCardProps) {
+export function TaskCard({
+  isSelected = false,
+  task,
+  onDeleteTask,
+  onSelectionChange,
+}: TaskCardProps) {
   const title = task.plan.title;
   const progress = calculateProgress(task);
 
   return (
     <article className="card taskCard" aria-labelledby={`${task.id}-title`}>
+      <label className="taskCardSelect">
+        <input
+          aria-label={`Select ${title}`}
+          checked={isSelected}
+          onChange={(event) =>
+            onSelectionChange?.(task.id, event.currentTarget.checked)
+          }
+          type="checkbox"
+        />
+        <span>Select</span>
+      </label>
+
       <div>
         <p className="eyebrow">{formatFeasibility(task.plan.feasibility)}</p>
         <h2 className="taskCardTitle" id={`${task.id}-title`}>
