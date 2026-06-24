@@ -13,6 +13,7 @@ type UseTasksValue = {
   addTask: (input: PlanRequest, plan: Plan) => StoredTask;
   updateTask: (task: StoredTask) => StoredTask;
   deleteTask: (taskId: string) => void;
+  importTasks: (tasks: StoredTask[]) => void;
   getTask: (taskId: string) => StoredTask | undefined;
 };
 
@@ -114,6 +115,20 @@ export function useTasks(): UseTasksValue {
     });
   }, []);
 
+  const importTasks = useCallback((importedTasks: StoredTask[]) => {
+    if (importedTasks.length === 0) {
+      return;
+    }
+
+    setTasks((existingTasks) => {
+      const nextTasks = [...existingTasks, ...importedTasks];
+
+      persistTasks(nextTasks);
+
+      return nextTasks;
+    });
+  }, []);
+
   const getTask = useCallback(
     (taskId: string) => tasks.find((task) => task.id === taskId),
     [tasks],
@@ -125,6 +140,7 @@ export function useTasks(): UseTasksValue {
     addTask,
     updateTask,
     deleteTask,
+    importTasks,
     getTask,
   };
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 
 import type { StoredTask } from "../features/tasks/task";
 import { useTasks } from "../features/tasks/use-tasks";
 import {
   createExportFilename,
+  parseTasksFromJsonExport,
   serializeTasksToJson,
   serializeTasksToMarkdown,
 } from "../features/tasks/export";
@@ -15,6 +16,7 @@ import { TaskCard } from "./task-card";
 type DashboardProps = {
   tasks: StoredTask[];
   onDeleteTask: (taskId: string) => void;
+  onImportTasks?: (tasks: StoredTask[]) => void;
 };
 
 function downloadTextFile(
@@ -32,19 +34,21 @@ function downloadTextFile(
   URL.revokeObjectURL(url);
 }
 
-export function Dashboard({ tasks, onDeleteTask }: DashboardProps) {
+export function Dashboard({
+  tasks,
+  onDeleteTask,
+  onImportTasks,
+}: DashboardProps) {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [importMessage, setImportMessage] = useState<string | undefined>();
+  const [importError, setImportError] = useState<string | undefined>();
   const selectedTasks = useMemo(
     () => tasks.filter((task) => selectedTaskIds.has(task.id)),
     [selectedTaskIds, tasks],
   );
   const selectedCount = selectedTasks.length;
-
-  if (tasks.length === 0) {
-    return <EmptyState />;
-  }
 
   function toggleTaskSelection(taskId: string, selected: boolean): void {
     setSelectedTaskIds((currentSelection) => {
@@ -85,6 +89,67 @@ export function Dashboard({ tasks, onDeleteTask }: DashboardProps) {
     );
   }
 
+  async function importTasksFromJson(
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const importedTasks = parseTasksFromJsonExport(await file.text());
+
+      onImportTasks?.(importedTasks);
+      clearSelection();
+      setImportError(undefined);
+      setImportMessage(
+        `Imported ${importedTasks.length} ${
+          importedTasks.length === 1 ? "task" : "tasks"
+        } as ${
+          importedTasks.length === 1
+            ? "a new local copy"
+            : "new local copies"
+        }.`,
+      );
+    } catch {
+      setImportMessage(undefined);
+      setImportError("Import failed. Choose a Deadline AI JSON export.");
+    }
+  }
+
+  const importPanel = (
+    <>
+      <div className="importPanel">
+        <label className="button" htmlFor="task-import-json">
+          Import JSON
+        </label>
+        <input
+          accept="application/json,.json"
+          className="visuallyHidden"
+          id="task-import-json"
+          onChange={(event) => void importTasksFromJson(event)}
+          type="file"
+        />
+        {importMessage ? (
+          <p className="importStatus">{importMessage}</p>
+        ) : null}
+        {importError ? <p className="importError">{importError}</p> : null}
+      </div>
+    </>
+  );
+
+  if (tasks.length === 0) {
+    return (
+      <div className="dashboardStack">
+        <EmptyState />
+        {importPanel}
+      </div>
+    );
+  }
+
   return (
     <section aria-labelledby="dashboard-title">
       <div className="hero">
@@ -94,6 +159,8 @@ export function Dashboard({ tasks, onDeleteTask }: DashboardProps) {
           Track progress, watch deadline pressure, and keep each plan moving.
         </p>
       </div>
+
+      {importPanel}
 
       {selectedCount > 0 ? (
         <div className="bulkActionBar" aria-live="polite">
@@ -155,10 +222,14 @@ function DashboardSkeleton() {
 }
 
 export function DashboardPage() {
-  const { tasks, hydrated, deleteTask } = useTasks();
+  const { tasks, hydrated, deleteTask, importTasks } = useTasks();
 
   return hydrated ? (
-    <Dashboard tasks={tasks} onDeleteTask={deleteTask} />
+    <Dashboard
+      tasks={tasks}
+      onDeleteTask={deleteTask}
+      onImportTasks={importTasks}
+    />
   ) : (
     <DashboardSkeleton />
   );

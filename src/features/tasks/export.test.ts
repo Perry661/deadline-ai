@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { StoredTask } from "./task";
 import {
   createExportFilename,
+  parseTasksFromJsonExport,
   serializeTasksToJson,
   serializeTasksToMarkdown,
 } from "./export";
@@ -83,5 +84,48 @@ describe("task export", () => {
     expect(createExportFilename("md", date)).toBe(
       "deadline-ai-tasks-2026-06-23.md",
     );
+  });
+
+  it("parses exported JSON as new local task copies", () => {
+    const importedTasks = parseTasksFromJsonExport(
+      serializeTasksToJson([task], "2026-06-23T12:30:00.000Z"),
+      () => "generated-id",
+    );
+
+    expect(importedTasks).toHaveLength(1);
+    expect(importedTasks[0]).toMatchObject({
+      ...task,
+      id: "task-generated-id",
+      plan: {
+        ...task.plan,
+        days: [
+          {
+            ...task.plan.days[0],
+            steps: [
+              {
+                ...task.plan.days[0].steps[0],
+                id: "step-generated-id",
+              },
+              {
+                ...task.plan.days[0].steps[1],
+                id: "step-generated-id",
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("rejects invalid import files", () => {
+    expect(() => parseTasksFromJsonExport("not json")).toThrow(
+      "Invalid Deadline AI export",
+    );
+    expect(() =>
+      parseTasksFromJsonExport(JSON.stringify({ version: 2, tasks: [task] })),
+    ).toThrow("Invalid Deadline AI export");
+    expect(() =>
+      parseTasksFromJsonExport(JSON.stringify({ version: 1, tasks: [{}] })),
+    ).toThrow("Invalid Deadline AI export");
   });
 });

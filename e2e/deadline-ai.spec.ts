@@ -199,3 +199,55 @@ test("shows an actionable generation error and lets users retry", async ({
   ).toBeVisible();
   expect(requestCount).toBe(2);
 });
+
+test("imports exported JSON as a new local task copy", async ({ page }) => {
+  const exportedTaskId = "task-from-export";
+  const exportedStepId = "step-from-export";
+  const exportedTask = {
+    id: exportedTaskId,
+    taskDescription: TASK_DESCRIPTION,
+    deadline: DEADLINE,
+    hoursPerDay: Number(HOURS_PER_DAY),
+    createdAt: "2026-06-23T12:00:00.000Z",
+    updatedAt: "2026-06-23T12:00:00.000Z",
+    plan: {
+      ...planFixture,
+      days: planFixture.days.map((day) => ({
+        ...day,
+        steps: day.steps.map((step, index) => ({
+          ...step,
+          id: index === 0 ? exportedStepId : step.id,
+        })),
+      })),
+    },
+  };
+
+  await page.goto("/");
+  await page.getByLabel("Import JSON").setInputFiles({
+    name: "deadline-ai-export.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        version: 1,
+        exportedAt: "2026-06-23T12:30:00.000Z",
+        tasks: [exportedTask],
+      }),
+    ),
+  });
+
+  await expect(
+    page.getByText("Imported 1 task as a new local copy."),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: planFixture.title })).toBeVisible();
+
+  const savedTasks = await page.evaluate((key) => {
+    return JSON.parse(window.localStorage.getItem(key) ?? "[]") as Array<{
+      id: string;
+      plan: { days: Array<{ steps: Array<{ id: string }> }> };
+    }>;
+  }, STORAGE_KEY);
+
+  expect(savedTasks).toHaveLength(1);
+  expect(savedTasks[0].id).not.toBe(exportedTaskId);
+  expect(savedTasks[0].plan.days[0].steps[0].id).not.toBe(exportedStepId);
+});

@@ -73,6 +73,7 @@ it("shows the empty dashboard state", () => {
   expect(
     screen.getByRole("link", { name: /create your first plan/i }),
   ).toBeVisible();
+  expect(screen.getByLabelText("Import JSON")).toBeInTheDocument();
 });
 
 it("shows stored tasks and lets users delete one", async () => {
@@ -150,6 +151,68 @@ it("exports selected tasks as JSON and Markdown", async () => {
   click.mockRestore();
   createObjectUrl.mockRestore();
   revokeObjectUrl.mockRestore();
+});
+
+it("imports JSON exports as new local task copies", async () => {
+  const user = userEvent.setup();
+  const deleteTask = vi.fn();
+  const importTasks = vi.fn();
+  const file = new File(
+    [
+      JSON.stringify({
+        version: 1,
+        exportedAt: "2026-06-23T12:30:00.000Z",
+        tasks: [storedTask],
+      }),
+    ],
+    "deadline-ai-tasks.json",
+    { type: "application/json" },
+  );
+
+  vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue("imported-id");
+
+  render(
+    <Dashboard
+      tasks={[secondStoredTask]}
+      onDeleteTask={deleteTask}
+      onImportTasks={importTasks}
+    />,
+  );
+
+  await user.upload(screen.getByLabelText("Import JSON"), file);
+
+  expect(importTasks).toHaveBeenCalledWith([
+    expect.objectContaining({
+      id: "task-imported-id",
+      plan: expect.objectContaining({
+        title: "Ship the MVP",
+      }),
+    }),
+  ]);
+  expect(screen.getByText("Imported 1 task as a new local copy.")).toBeVisible();
+});
+
+it("shows a safe error when import fails", async () => {
+  const user = userEvent.setup();
+  const importTasks = vi.fn();
+  const file = new File(["not json"], "broken.json", {
+    type: "application/json",
+  });
+
+  render(
+    <Dashboard
+      tasks={[storedTask]}
+      onDeleteTask={() => undefined}
+      onImportTasks={importTasks}
+    />,
+  );
+
+  await user.upload(screen.getByLabelText("Import JSON"), file);
+
+  expect(importTasks).not.toHaveBeenCalled();
+  expect(
+    screen.getByText("Import failed. Choose a Deadline AI JSON export."),
+  ).toBeVisible();
 });
 
 it.each([

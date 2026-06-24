@@ -151,6 +151,31 @@ describe("useTasks", () => {
     );
   });
 
+  it("imports task copies without replacing existing tasks", async () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([savedTask]));
+    const importedTask: StoredTask = {
+      ...savedTask,
+      id: "task-imported-copy",
+      plan: {
+        ...savedTask.plan,
+        title: "Imported copy",
+      },
+    };
+
+    const { result } = renderHook(() => useTasks());
+
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
+
+    act(() => {
+      result.current.importTasks([importedTask]);
+    });
+
+    expect(result.current.tasks).toEqual([savedTask, importedTask]);
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "[]")).toEqual(
+      [savedTask, importedTask],
+    );
+  });
+
   it("keeps hook state usable when localStorage throws", async () => {
     installThrowingStorage();
 
