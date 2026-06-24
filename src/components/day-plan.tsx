@@ -51,7 +51,9 @@ export function DayPlan({ day, onToggleStep }: DayPlanProps) {
                 onChange={() => onToggleStep(step.id)}
                 type="checkbox"
               />
-              <span>{label}</span>
+              <span className={step.completed ? "stepItemTextCompleted" : ""}>
+                {label}
+              </span>
             </label>
           );
         })}
